@@ -94,6 +94,11 @@ config BR2_PACKAGE_LINUX_FIRMWARE_QUALCOMM_9377_BT
 	help
 	  Firmware files for QCA9377 bluetooth support.
 
+config BR2_PACKAGE_LINUX_FIRMWARE_QUALCOMM_3990_BT
+	bool "Qualcomm Atheros WCN3990 Bluetooth"
+	help
+	  Firmware files for WCN3990 bluetooth support.
+
 config BR2_PACKAGE_LINUX_FIRMWARE_AR3011
 	bool "Qualcomm Atheros 3011"
 	help
@@ -162,6 +167,11 @@ config BR2_PACKAGE_LINUX_FIRMWARE_ATHEROS_10K_QCA998X
 	bool "Atheros 10k (QCA998X)"
 	help
 	  Firmware files for the Atheros QCA988X module
+
+config BR2_PACKAGE_LINUX_FIRMWARE_ATHEROS_10K_WCN3990
+	bool "Atheros 10k (WCN3990)"
+	help
+	  Firmware files for the Atheros WCN3990 module
 
 config BR2_PACKAGE_LINUX_FIRMWARE_BRCM_BCM43XX
 	bool "Broadcom BRCM bcm43xx"
