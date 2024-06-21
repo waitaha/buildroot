@@ -1,0 +1,38 @@
+From a5405fb066c38a18d9538a964bb5bb38a384082d Mon Sep 17 00:00:00 2001
+From: Jens Reidel <adrian@travitia.xyz>
+Date: Fri, 21 Jun 2024 13:38:38 +0200
+Subject: [PATCH] Add a makefile for mkbootimg
+
+Signed-off-by: Jens Reidel <adrian@travitia.xyz>
+---
+ debian/makefiles/mkbootimg.mk | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 debian/makefiles/mkbootimg.mk
+
+diff --git a/debian/makefiles/mkbootimg.mk b/debian/makefiles/mkbootimg.mk
+new file mode 100644
+index 0000000..a116ef4
+--- /dev/null
++++ b/debian/makefiles/mkbootimg.mk
+@@ -0,0 +1,18 @@
++# Makefile for mkbootimg
++
++VPATH+= $(SRCDIR)/core/mkbootimg
++SRCS+= mkbootimg.c
++CPPFLAGS+= -I$(SRCDIR)/core/mkbootimg
++CPPFLAGS+= -I$(SRCDIR)/core/include
++
++LIBS+= -lc `pkg-config --libs libcrypto`
++
++OBJS= $(SRCS:.c=.o)
++
++all: mkbootimg
++
++mkbootimg: $(OBJS)
++	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
++
++clean:
++	rm -rf $(OBJS) mkbootimg
+-- 
+2.45.1
+

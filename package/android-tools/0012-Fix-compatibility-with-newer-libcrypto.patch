@@ -1,0 +1,94 @@
+From 2efe3778ac3ef5736e6867b0e906105a93f285ba Mon Sep 17 00:00:00 2001
+From: Jens Reidel <adrian@travitia.xyz>
+Date: Fri, 21 Jun 2024 13:51:15 +0200
+Subject: [PATCH] Fix compatibility with newer libcrypto
+
+Signed-off-by: Jens Reidel <adrian@travitia.xyz>
+---
+ core/include/mincrypt/sha.h | 24 +++++++++---------------
+ core/mkbootimg/mkbootimg.c  | 22 +++++++++++-----------
+ 2 files changed, 20 insertions(+), 26 deletions(-)
+
+diff --git a/core/include/mincrypt/sha.h b/core/include/mincrypt/sha.h
+index af63e87..ba74aa9 100644
+--- a/core/include/mincrypt/sha.h
++++ b/core/include/mincrypt/sha.h
+@@ -35,26 +35,20 @@ extern "C" {
+ #endif
+ 
+ typedef struct SHA_CTX {
+-    uint64_t count;
+-    uint32_t state[5];
+-#if defined(HAVE_ENDIAN_H) && defined(HAVE_LITTLE_ENDIAN)
+-    union {
+-        uint8_t b[64];
+-        uint32_t w[16];
+-    } buf;
+-#else
+-    uint8_t buf[64];
+-#endif
++    unsigned int h0, h1, h2, h3, h4;
++    unsigned int Nl, Nh;
++    unsigned int data[16];
++    unsigned int num;
+ } SHA_CTX;
+ 
+-void SHA_init(SHA_CTX* ctx);
+-void SHA_update(SHA_CTX* ctx, const void* data, int len);
+-const uint8_t* SHA_final(SHA_CTX* ctx);
++int SHA1_Init(SHA_CTX* ctx);
++int SHA1_Update(SHA_CTX* ctx, const void* data, unsigned long len);
++int SHA1_Final(uint8_t* digest, SHA_CTX* ctx);
+ 
+ /* Convenience method. Returns digest parameter value. */
+-const uint8_t* SHA(const void* data, int len, uint8_t* digest);
++unsigned char* SHA1(const uint8_t* data, unsigned long len, unsigned char* digest);
+ 
+-#define SHA_DIGEST_SIZE 20
++#define SHA_DIGEST_LENGTH 20
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/core/mkbootimg/mkbootimg.c b/core/mkbootimg/mkbootimg.c
+index 2c32ce3..8985919 100644
+--- a/core/mkbootimg/mkbootimg.c
++++ b/core/mkbootimg/mkbootimg.c
+@@ -108,7 +108,7 @@ int main(int argc, char **argv)
+     unsigned pagesize = 2048;
+     int fd;
+     SHA_CTX ctx;
+-    uint8_t* sha;
++    uint8_t sha[SHA_DIGEST_LENGTH];
+     unsigned base           = 0x10000000;
+     unsigned kernel_offset  = 0x00008000;
+     unsigned ramdisk_offset = 0x01000000;
+@@ -225,16 +225,16 @@ int main(int argc, char **argv)
+     /* put a hash of the contents in the header so boot images can be
+      * differentiated based on their first 2k.
+      */
+-    SHA_init(&ctx);
+-    SHA_update(&ctx, kernel_data, hdr.kernel_size);
+-    SHA_update(&ctx, &hdr.kernel_size, sizeof(hdr.kernel_size));
+-    SHA_update(&ctx, ramdisk_data, hdr.ramdisk_size);
+-    SHA_update(&ctx, &hdr.ramdisk_size, sizeof(hdr.ramdisk_size));
+-    SHA_update(&ctx, second_data, hdr.second_size);
+-    SHA_update(&ctx, &hdr.second_size, sizeof(hdr.second_size));
+-    sha = SHA_final(&ctx);
+-    memcpy(hdr.id, sha,
+-           SHA_DIGEST_SIZE > sizeof(hdr.id) ? sizeof(hdr.id) : SHA_DIGEST_SIZE);
++    SHA1_Init(&ctx);
++    SHA1_Update(&ctx, kernel_data, hdr.kernel_size);
++    SHA1_Update(&ctx, &hdr.kernel_size, sizeof(hdr.kernel_size));
++    SHA1_Update(&ctx, ramdisk_data, hdr.ramdisk_size);
++    SHA1_Update(&ctx, &hdr.ramdisk_size, sizeof(hdr.ramdisk_size));
++    SHA1_Update(&ctx, second_data, hdr.second_size);
++    SHA1_Update(&ctx, &hdr.second_size, sizeof(hdr.second_size));
++    SHA1_Final(sha, &ctx);
++    memcpy(hdr.id, &sha,
++           SHA_DIGEST_LENGTH > sizeof(hdr.id) ? sizeof(hdr.id) : SHA_DIGEST_LENGTH);
+ 
+     fd = open(bootimg, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+     if(fd < 0) {
+-- 
+2.45.1
+
